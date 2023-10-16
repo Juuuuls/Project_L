@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+<h1 align="center">Hello!</h1>
+
+<!-- Add buttons for Alarm, SMS, and GPS here -->
+<div class="text-center">
+  <button class="btn btn-primary m-2" onclick="redirectTo('/alarm')">Alarm</button>
+  <button class="btn btn-primary m-2" onclick="showSendSMSForm()">SMS</button>
+  <button class="btn btn-primary m-2" onclick="redirectTo('/gps')">GPS</button>
+</div>
+
+<div id="sendSMSForm" style="display: none;">
+  {% include "send_sms.html" %}
+</div>
+
+<script>
+  // JavaScript function to redirect to different pages
+  function redirectTo(page) {
+    window.location.href = page;
+  }
+
+  // JavaScript function to show the Send SMS form
+  function showSendSMSForm() {
+    var sendSMSForm = document.getElementById("sendSMSForm");
+    sendSMSForm.style.display = "block";
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Main Page{% endblock %}
+
+{% block content %}
+<h1 align="center">Main Page!</h1>
+
+<!-- Add buttons for Alarm, SMS, and GPS here -->
+<div class="text-center">
+  <button class="btn btn-primary m-2" onclick="redirectTo('/alarm')">Alarm</button>
+  <button class="btn btn-primary m-2" onclick="redirectTo('/sms')">SMS</button>
+  <button class="btn btn-primary m-2" onclick="redirectTo('/gps')">GPS</button>
+  <a class="btn btn-primary m-2" href="{{ url_for('views.main_page') }}"> Go to Main Page</a>
+</div>
+
+<script>
+  // JavaScript function to redirect to different pages
+  function redirectTo(page) {
+    window.location.href = page;
+  }
+</script>
+{% endblock %}
