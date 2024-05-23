@@ -12,16 +12,13 @@
 #define LECHO_PIN 9 // yellow wire
 
 // Right sensor
-#define RTRIGGER_PIN 11 // orange
-#define RECHO_PIN 7  // yellow wire
+#define RTRIGGER_PIN 11 // brown+
+#define RECHO_PIN 7  // violet wire
 
 #define LEFT_IR_PIN A1
 #define CENTER_IR_PIN A3
 #define RIGHT_IR_PIN A2
-#define LEFT_DIR_PIN 2
-#define RIGHT_DIR_PIN 4
-#define LEFT_SPEED_PIN 5
-#define RIGHT_SPEED_PIN 6
+
 
 Ultrasonic sonarF(FTRIGGER_PIN, FECHO_PIN);
 Ultrasonic sonarL(LTRIGGER_PIN, LECHO_PIN);
@@ -44,12 +41,15 @@ float DistanceL;
 float DistanceR;
 
 // Distance threshold for obstacle detection
-int distance = 70;
+int distance = 80;
 int distanceS = 60;
 
 // Servo variable
 Servo myservo;
 int pos = 0;
+
+unsigned long previousMillis = 0;
+const long interval = 100;
 
 void setup() {
   myservo.attach(10);  // attaches the servo on pin 10 to the servo object
@@ -88,19 +88,19 @@ void loop() {
 
 void RC(int keycode) {
   if (keycode == IR_KEYCODE_UP) {
-    forward();
+    forwardRC();
     delay(100);
     stop();
   } else if (keycode == IR_KEYCODE_DOWN) {
-    reverse();
+    reverseRC();
     delay(100);
     stop();
   } else if (keycode == IR_KEYCODE_LEFT) {
-    right();
+    rightRC();
     delay(100);
     stop();
   } else if (keycode == IR_KEYCODE_RIGHT) {
-    left();
+    leftRC();
     delay(100);
     stop();
   } else if (keycode == IR_KEYCODE_OK) {
@@ -116,6 +116,8 @@ void RC(int keycode) {
 
 void ObsDetection() {
   int iterations = 7; // Number of measurements for median filtering
+  pos = 50;
+  myservo.write(pos);
 
   // Get sensor data
   DistanceF = sonarF.distanceRead(iterations);
@@ -163,41 +165,30 @@ void navigate() {
 }
 
 void LineFollower() {
-  int leftIRValue = digitalRead(LEFT_IR_PIN);
-  int centerIRValue = digitalRead(CENTER_IR_PIN);
-  int rightIRValue = digitalRead(RIGHT_IR_PIN);
+    unsigned long currentMillis = millis();
 
-    if (centerIRValue == HIGH) {
-    if (leftIRValue == LOW && rightIRValue == LOW) { // Both left and right sensors off the line
-      forward();
-    } 
-    else if (leftIRValue == LOW && rightIRValue == HIGH) { // Right sensor on line
-      right();
-    } 
-    else if (leftIRValue == HIGH && rightIRValue == LOW) { // Left sensor on line
-     left();
-    } 
-  } 
-  else { // Center sensor off the line
-    if (leftIRValue == LOW && rightIRValue == LOW) { // Both left and right sensors off the line
-      if (lastDirectionLeft) {
-        right(); // Backtrack to the right
-      } 
-      else {
-        left(); // Backtrack to the left
-      }
-        reverse(); // Perform reverse maneuver
-    }
-    else { // Either left or right sensor on the line
-      if (leftIRValue == LOW) { // Left sensor on line
-        left();
-      } 
-      else if (rightIRValue == LOW) { // Right sensor on line
-        right();
-      }
+  if (currentMillis - previousMillis >= interval) {
+    previousMillis = currentMillis;  // Update the timing
+
+    int leftIRValue = digitalRead(LEFT_IR_PIN);
+    int rightIRValue = digitalRead(RIGHT_IR_PIN);
+
+    Serial.print("Left_IR_Value:");
+    Serial.println(leftIRValue);
+    Serial.print("Right_IR_Value:");
+    Serial.println(rightIRValue);
+    Serial.println("");
+
+    if (leftIRValue == LOW && rightIRValue == LOW) {
+      forwardLF();
+    } else if (leftIRValue == LOW && rightIRValue == HIGH) {
+      rightLF();
+    } else if (leftIRValue == HIGH && rightIRValue == LOW) {
+      leftLF();
+    } else {
+      forwardLF(); // You might want to use stop(); here depending on your intended behavior
     }
   }
-  
 }
 
 // Movement functions
@@ -236,5 +227,69 @@ void stop() {
   analogWrite(5, 0);
   digitalWrite(4, LOW);
   analogWrite(6, 0);
+}
+
+// Movement functions RC
+
+void forwardRC() {
+  digitalWrite(2, LOW);
+  analogWrite(5, 200);
+  digitalWrite(4, LOW);
+  analogWrite(6, 200);
+}
+
+void reverseRC() {
+  digitalWrite(2, HIGH);
+  analogWrite(5, 100);
+  digitalWrite(4, HIGH);
+  analogWrite(6, 100);
+}
+
+void leftRC() {
+  digitalWrite(2, HIGH);
+  analogWrite(5, 170);
+  digitalWrite(4, LOW);
+  analogWrite(6, 170);
+  
+}
+
+void rightRC() {
+  digitalWrite(2, LOW);
+  analogWrite(5, 170);
+  digitalWrite(4, HIGH);
+  analogWrite(6, 170);
+  
+}
+
+// Movement functions LF
+
+void forwardLF() {
+  digitalWrite(2, LOW);
+  analogWrite(5, 54);
+  digitalWrite(4, LOW);
+  analogWrite(6, 54);
+}
+
+void reverseLF() {
+  digitalWrite(2, HIGH);
+  analogWrite(5, 64);
+  digitalWrite(4, HIGH);
+  analogWrite(6, 64);
+}
+
+void leftLF() {
+  digitalWrite(2, HIGH);
+  analogWrite(5, 64);
+  digitalWrite(4, LOW);
+  analogWrite(6, 64);
+  
+}
+
+void rightLF() {
+  digitalWrite(2, LOW);
+  analogWrite(5, 64);
+  digitalWrite(4, HIGH);
+  analogWrite(6, 64);
+  
 }
 
