@@ -144,20 +144,20 @@ void navigate() {
       if (Repeated_FL == 2) {
         if (DistanceR > DistanceF || DistanceR > DistanceL) {
           right(); // Brute right
-          delay(1000);
+          delay(350);
           Repeated_FL = 0;
         } else {
           left();
         }
       } else {
         left();  // Right sensors detect obstacles, turn left
-        delay(1000);
+        delay(350);
       }
     } else {
       Repeated_FL = 0;
       Serial.println("Left");
       right();  // If only the front sensor detects an obstacle, turn right
-      delay(1000);
+      delay(350);
     }
   } else {
     forward();  // If no obstacles detected in front, move forward
@@ -194,9 +194,9 @@ void LineFollower() {
 // Movement functions
 void forward() {
   digitalWrite(2, LOW);
-  analogWrite(5, 100);
+  analogWrite(5, 70);
   digitalWrite(4, LOW);
-  analogWrite(6, 100);
+  analogWrite(6, 70);
 }
 
 void reverse() {
@@ -208,18 +208,17 @@ void reverse() {
 
 void left() {
   digitalWrite(2, HIGH);
-  analogWrite(5, 70);
+  analogWrite(5, 100);
   digitalWrite(4, LOW);
-  analogWrite(6, 70);
+  analogWrite(6, 100);
   
 }
 
 void right() {
   digitalWrite(2, LOW);
-  analogWrite(5, 70);
+  analogWrite(5, 100); // Increased speed to 100
   digitalWrite(4, HIGH);
-  analogWrite(6, 70);
-  
+  analogWrite(6, 100); // Increased speed to 100
 }
 
 void stop() {
@@ -233,9 +232,9 @@ void stop() {
 
 void forwardRC() {
   digitalWrite(2, LOW);
-  analogWrite(5, 200);
+  analogWrite(5, 150);
   digitalWrite(4, LOW);
-  analogWrite(6, 200);
+  analogWrite(6, 150);
 }
 
 void reverseRC() {
