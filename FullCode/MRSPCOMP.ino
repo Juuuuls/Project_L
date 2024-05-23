@@ -3,8 +3,6 @@
 #include <Servo.h>
 #include <Ultrasonic.h>
 
-IRremote ir(3);
-
 // Define ultrasonic sensor pins
 #define FTRIGGER_PIN 12 // white wire
 #define FECHO_PIN 13 // yellow wire
@@ -17,7 +15,6 @@ IRremote ir(3);
 #define RTRIGGER_PIN 11 // orange
 #define RECHO_PIN 7  // yellow wire
 
-// Line follower
 #define LEFT_IR_PIN A1
 #define CENTER_IR_PIN A3
 #define RIGHT_IR_PIN A2
@@ -30,21 +27,25 @@ Ultrasonic sonarF(FTRIGGER_PIN, FECHO_PIN);
 Ultrasonic sonarL(LTRIGGER_PIN, LECHO_PIN);
 Ultrasonic sonarR(RTRIGGER_PIN, RECHO_PIN);
 
+
+IRremote ir(3);
+
 // Global variables
-float DistanceF;
-float DistanceL;
-float DistanceR;
-bool lastDirectionLeft = false;
-
-// Distance threshold for obstacle detection
-int distance = 50;
-int distanceS = 60;
-
-// Remote state
+//remote state
 int state = 0; 
 const int STATE_RC = 0;
 const int STATE_LF = 1;
 const int STATE_OA = 2;
+bool lastDirectionLeft = false;
+
+// Global variables
+float DistanceF;
+float DistanceL;
+float DistanceR;
+
+// Distance threshold for obstacle detection
+int distance = 70;
+int distanceS = 60;
 
 // Servo variable
 Servo myservo;
@@ -56,9 +57,8 @@ void setup() {
   pinMode(LEFT_IR_PIN, INPUT);
   pinMode(CENTER_IR_PIN, INPUT);
   pinMode(RIGHT_IR_PIN, INPUT);
-
   pinMode(2, OUTPUT);
-  pinMode(5, OUTPUT);
+   pinMode(5, OUTPUT);
   pinMode(4, OUTPUT);
   pinMode(6, OUTPUT);
   Serial.begin(9600);
@@ -87,21 +87,20 @@ void loop() {
 }
 
 void RC(int keycode) {
-  int speed = 110;
   if (keycode == IR_KEYCODE_UP) {
-    forward(speed);
+    forward();
     delay(100);
     stop();
   } else if (keycode == IR_KEYCODE_DOWN) {
-    reverse(speed);
+    reverse();
     delay(100);
     stop();
   } else if (keycode == IR_KEYCODE_LEFT) {
-    left();
+    right();
     delay(100);
     stop();
   } else if (keycode == IR_KEYCODE_RIGHT) {
-    right();
+    left();
     delay(100);
     stop();
   } else if (keycode == IR_KEYCODE_OK) {
@@ -116,7 +115,6 @@ void RC(int keycode) {
 }
 
 void ObsDetection() {
-  int speed = 65; // Speed for obstacle avoidance
   int iterations = 7; // Number of measurements for median filtering
 
   // Get sensor data
@@ -124,11 +122,12 @@ void ObsDetection() {
   DistanceL = sonarL.distanceRead(iterations);
   DistanceR = sonarR.distanceRead(iterations);
 
-  navigate(speed);
+  navigate();
 }
 
-void navigate(int speed) {
-  static int Repeated_FL = 0;
+void navigate() {
+  int Repeated_FL = 0;
+  int Repeated_FR = 0;
 
   if (DistanceF <= distance) {
     Serial.println("F");
@@ -137,92 +136,99 @@ void navigate(int speed) {
 
     if (DistanceL < distanceS) {
       if (DistanceF < distance) {
-        reverse(speed);
+        reverse();
       }
       Repeated_FL += 1; // Correct increment
       if (Repeated_FL == 2) {
         if (DistanceR > DistanceF || DistanceR > DistanceL) {
-          left();
-          delay(700);
+          right(); // Brute right
+          delay(1000);
           Repeated_FL = 0;
         } else {
-          right();
+          left();
         }
       } else {
-        right();
-        delay(700);
+        left();  // Right sensors detect obstacles, turn left
+        delay(1000);
       }
     } else {
       Repeated_FL = 0;
       Serial.println("Left");
-      right();
-      delay(700);
+      right();  // If only the front sensor detects an obstacle, turn right
+      delay(1000);
     }
   } else {
-    forward(speed);
+    forward();  // If no obstacles detected in front, move forward
   }
 }
 
 void LineFollower() {
-  // Read sensor values
   int leftIRValue = digitalRead(LEFT_IR_PIN);
   int centerIRValue = digitalRead(CENTER_IR_PIN);
   int rightIRValue = digitalRead(RIGHT_IR_PIN);
 
-  // Line following logic
-  if (centerIRValue == HIGH) {
+    if (centerIRValue == HIGH) {
     if (leftIRValue == LOW && rightIRValue == LOW) { // Both left and right sensors off the line
-      forward(110);
-    } else if (leftIRValue == LOW && rightIRValue == HIGH) { // Right sensor on line
+      forward();
+    } 
+    else if (leftIRValue == LOW && rightIRValue == HIGH) { // Right sensor on line
       right();
-    } else if (leftIRValue == HIGH && rightIRValue == LOW) { // Left sensor on line
-      left();
-    }
-  } else { // Center sensor off the line
+    } 
+    else if (leftIRValue == HIGH && rightIRValue == LOW) { // Left sensor on line
+     left();
+    } 
+  } 
+  else { // Center sensor off the line
     if (leftIRValue == LOW && rightIRValue == LOW) { // Both left and right sensors off the line
       if (lastDirectionLeft) {
-        right();
-      } else {
-        left();
+        right(); // Backtrack to the right
+      } 
+      else {
+        left(); // Backtrack to the left
       }
-      reverse(110);
-    } else { // Either left or right sensor on the line
+        reverse(); // Perform reverse maneuver
+    }
+    else { // Either left or right sensor on the line
       if (leftIRValue == LOW) { // Left sensor on line
         left();
-      } else if (rightIRValue == LOW) { // Right sensor on line
+      } 
+      else if (rightIRValue == LOW) { // Right sensor on line
         right();
       }
     }
   }
+  
 }
 
 // Movement functions
-void forward(int speed) {
+void forward() {
   digitalWrite(2, LOW);
-  analogWrite(5, speed);
+  analogWrite(5, 100);
   digitalWrite(4, LOW);
-  analogWrite(6, speed);
+  analogWrite(6, 100);
 }
 
-void reverse(int speed) {
+void reverse() {
   digitalWrite(2, HIGH);
-  analogWrite(5, speed);
+  analogWrite(5, 64);
   digitalWrite(4, HIGH);
-  analogWrite(6, speed);
+  analogWrite(6, 64);
 }
 
 void left() {
   digitalWrite(2, HIGH);
-  analogWrite(5, 50); // Fixed speed for turning
+  analogWrite(5, 70);
   digitalWrite(4, LOW);
-  analogWrite(6, 50);
+  analogWrite(6, 70);
+  
 }
 
 void right() {
   digitalWrite(2, LOW);
-  analogWrite(5, 50); // Fixed speed for turning
+  analogWrite(5, 70);
   digitalWrite(4, HIGH);
-  analogWrite(6, 50);
+  analogWrite(6, 70);
+  
 }
 
 void stop() {
@@ -231,3 +237,4 @@ void stop() {
   digitalWrite(4, LOW);
   analogWrite(6, 0);
 }
+
